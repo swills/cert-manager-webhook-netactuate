@@ -107,7 +107,7 @@ func (c *customDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) error {
 
 	// sets a record in the DNS provider's console
 	resp, err := namesilo.Call[namesilo.Response](apiKey, "dnsAddRecord", map[string]string{
-		"domain":  ch.ResolvedZone,
+		"domain":  namesilo.GetDomainFromZone(ch.ResolvedZone),
 		"rrtype":  "TXT",
 		"rrhost":  strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone),
 		"rrvalue": ch.Key,
@@ -142,7 +142,7 @@ func (c *customDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 	}
 	// 1. fetch the TXT record id
 	listResp, err := namesilo.Call[namesilo.DnsRecordListResponse](apiKey, "dnsListRecords", map[string]string{
-		"domain": ch.ResolvedZone,
+		"domain": namesilo.GetDomainFromZone(ch.ResolvedZone),
 	})
 	if err != nil {
 		utils.Log("Error listing TXT records for %s, %s: %s", ch.ResolvedFQDN, ch.ResolvedZone, err.Error())
@@ -153,7 +153,7 @@ func (c *customDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 	}
 	targetRecordID := ""
 	for _, r := range listResp.Reply.ResourceRecord {
-		if r.Host == ch.ResolvedFQDN && r.Type == "TXT" && r.Value == ch.Key {
+		if r.Host == namesilo.GetDomainFromZone(ch.ResolvedFQDN) && r.Type == "TXT" && r.Value == ch.Key {
 			targetRecordID = r.ResourceID
 			break
 		}
@@ -169,7 +169,7 @@ func (c *customDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 
 	// 2. delete the TXT record
 	deleteResp, err := namesilo.Call[namesilo.Response](apiKey, "dnsDeleteRecord", map[string]string{
-		"domain": ch.ResolvedFQDN,
+		"domain": namesilo.GetDomainFromZone(ch.ResolvedZone),
 		"rrid":   targetRecordID,
 	})
 	if err != nil {

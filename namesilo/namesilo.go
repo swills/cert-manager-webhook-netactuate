@@ -75,3 +75,7 @@ func Call[Resp any](apiKey string, operation string, params map[string]string) (
 	}
 	return resp, nil
 }
+
+func GetDomainFromZone(fqdn string) string {
+	return strings.TrimSuffix(fqdn, ".")
+}
