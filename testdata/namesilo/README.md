@@ -1,3 +1,3 @@
 # Solver testdata directory
 
-TODO
+Get api-key from namesilo.
