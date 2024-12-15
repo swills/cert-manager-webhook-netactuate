@@ -1,4 +1,4 @@
-module github.com/cert-manager/webhook-example
+module github.com/er1c-zh/cert-manager-webhook-namesilo
 
 go 1.22.0
 

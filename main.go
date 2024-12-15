@@ -1,15 +1,23 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	extapi "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
+	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
+	"github.com/er1c-zh/cert-manager-webhook-namesilo/namesilo"
+	"github.com/er1c-zh/cert-manager-webhook-namesilo/utils"
 )
 
 var GroupName = os.Getenv("GROUP_NAME")
@@ -40,7 +48,7 @@ type customDNSProviderSolver struct {
 	// 3. uncomment the relevant code in the Initialize method below
 	// 4. ensure your webhook's service account has the required RBAC role
 	//    assigned to it for interacting with the Kubernetes APIs you need.
-	//client kubernetes.Clientset
+	client *kubernetes.Clientset
 }
 
 // customDNSProviderConfig is a structure that is used to decode into when
@@ -64,7 +72,9 @@ type customDNSProviderConfig struct {
 	// `issuer.spec.acme.dns01.providers.webhook.config` field.
 
 	//Email           string `json:"email"`
-	//APIKeySecretRef v1alpha1.SecretKeySelector `json:"apiKeySecretRef"`
+	// APIKeySecretRef v1alpha1.SecretKeySelector `json:"apiKeySecretRef"`
+
+	APIKey cmmetav1.SecretKeySelector `json:"apiKey"`
 }
 
 // Name is used as the name for this DNS solver when referencing it on the ACME
@@ -74,7 +84,7 @@ type customDNSProviderConfig struct {
 // within a single webhook deployment**.
 // For example, `cloudflare` may be used as the name of a solver.
 func (c *customDNSProviderSolver) Name() string {
-	return "my-custom-solver"
+	return "namesilo"
 }
 
 // Present is responsible for actually presenting the DNS record with the
@@ -88,10 +98,29 @@ func (c *customDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) error {
 		return err
 	}
 
-	// TODO: do something more useful with the decoded configuration
-	fmt.Printf("Decoded configuration %v", cfg)
+	apiKey, err := c.loadAPIKey(cfg, ch)
+	if err != nil {
+		return err
+	}
 
-	// TODO: add code that sets a record in the DNS provider's console
+	utils.Log("Presenting TXT record %s for %s, %s", ch.Key, ch.ResolvedFQDN, ch.ResolvedZone)
+
+	// sets a record in the DNS provider's console
+	resp, err := namesilo.Call[namesilo.Response](apiKey, "dnsAddRecord", map[string]string{
+		"domain":  ch.ResolvedZone,
+		"rrtype":  "TXT",
+		"rrhost":  strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone),
+		"rrvalue": ch.Key,
+	})
+	if err != nil {
+		return err
+	}
+	if resp.Reply.Code != "300" {
+		utils.Log("Error adding TXT record %s for %s, %s: %s", ch.Key, ch.ResolvedFQDN, ch.ResolvedZone, resp.Reply.Detail)
+		return errors.New(resp.Reply.Detail)
+	}
+	utils.Log("Added TXT record %s for %s, %s", ch.Key, ch.ResolvedFQDN, ch.ResolvedZone)
+
 	return nil
 }
 
@@ -102,7 +131,55 @@ func (c *customDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) error {
 // This is in order to facilitate multiple DNS validations for the same domain
 // concurrently.
 func (c *customDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
-	// TODO: add code that deletes a record from the DNS provider's console
+	// add code that deletes a record from the DNS provider's console
+	cfg, err := loadConfig(ch.Config)
+	if err != nil {
+		return err
+	}
+	apiKey, err := c.loadAPIKey(cfg, ch)
+	if err != nil {
+		return err
+	}
+	// 1. fetch the TXT record id
+	listResp, err := namesilo.Call[namesilo.DnsRecordListResponse](apiKey, "dnsListRecords", map[string]string{
+		"domain": ch.ResolvedZone,
+	})
+	if err != nil {
+		utils.Log("Error listing TXT records for %s, %s: %s", ch.ResolvedFQDN, ch.ResolvedZone, err.Error())
+		return err
+	}
+	if listResp.Reply.Code != "300" {
+		return errors.New(listResp.Reply.Detail)
+	}
+	targetRecordID := ""
+	for _, r := range listResp.Reply.ResourceRecord {
+		if r.Host == ch.ResolvedFQDN && r.Type == "TXT" && r.Value == ch.Key {
+			targetRecordID = r.ResourceID
+			break
+		}
+	}
+	if targetRecordID == "" {
+		utils.Log("No TXT record found for %s", ch.ResolvedFQDN)
+		for _, r := range listResp.Reply.ResourceRecord {
+			utils.Log("%s %s %s %s", r.ResourceID, r.Type, r.Host, r.Value)
+		}
+		return fmt.Errorf("no TXT record found for %s", ch.ResolvedFQDN)
+	}
+	utils.Log("Found TXT record %s for %s, %s", targetRecordID, ch.ResolvedFQDN, ch.ResolvedZone)
+
+	// 2. delete the TXT record
+	deleteResp, err := namesilo.Call[namesilo.Response](apiKey, "dnsDeleteRecord", map[string]string{
+		"domain": ch.ResolvedFQDN,
+		"rrid":   targetRecordID,
+	})
+	if err != nil {
+		return err
+	}
+	if deleteResp.Reply.Code != "300" {
+		utils.Log("Error deleting TXT record %s for %s, %s: %s", targetRecordID, ch.ResolvedFQDN, ch.ResolvedZone, deleteResp.Reply.Detail)
+		return errors.New(deleteResp.Reply.Detail)
+	}
+
 	return nil
 }
 
@@ -119,15 +196,28 @@ func (c *customDNSProviderSolver) Initialize(kubeClientConfig *rest.Config, stop
 	///// UNCOMMENT THE BELOW CODE TO MAKE A KUBERNETES CLIENTSET AVAILABLE TO
 	///// YOUR CUSTOM DNS PROVIDER
 
-	//cl, err := kubernetes.NewForConfig(kubeClientConfig)
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//c.client = cl
+	cl, err := kubernetes.NewForConfig(kubeClientConfig)
+	if err != nil {
+		return err
+	}
+
+	c.client = cl
 
 	///// END OF CODE TO MAKE KUBERNETES CLIENTSET AVAILABLE
 	return nil
+}
+
+// loadAPIKey loads namesilo API key
+func (c *customDNSProviderSolver) loadAPIKey(cfg customDNSProviderConfig, ch *v1alpha1.ChallengeRequest) (string, error) {
+	s, err := c.client.CoreV1().Secrets(ch.ResourceNamespace).Get(context.Background(), cfg.APIKey.Name, metav1.GetOptions{})
+	if err != nil {
+		return "", err
+	}
+	keyBytes, ok := s.Data[cfg.APIKey.Key]
+	if !ok {
+		return "", errors.New("secret key not found")
+	}
+	return string(keyBytes), nil
 }
 
 // loadConfig is a small helper function that decodes JSON configuration into
