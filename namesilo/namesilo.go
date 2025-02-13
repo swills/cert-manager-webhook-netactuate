@@ -61,7 +61,9 @@ func Call[Resp any](apiKey string, operation string, params map[string]string) (
 	if err != nil {
 		return resp, err
 	}
-	defer httpResp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(httpResp.Body)
 	if httpResp.StatusCode != 200 {
 		return resp, fmt.Errorf("namesilo: %s", httpResp.Status)
 	}
