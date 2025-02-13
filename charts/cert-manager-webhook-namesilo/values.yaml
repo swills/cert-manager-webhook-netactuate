@@ -13,7 +13,7 @@ certManager:
   serviceAccountName: cert-manager
 
 image:
-  repository: ghcr.io/er1c-zh/cert-manager-webhook-namesilo/cert-manager-webhook-namesilo
+  repository: ghcr.io/swills/cert-manager-webhook-namesilo/cert-manager-webhook-namesilo
   tag: latest
   pullPolicy: IfNotPresent
 
