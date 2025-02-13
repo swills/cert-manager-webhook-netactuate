@@ -35,7 +35,7 @@ type DnsRecordListResponse struct {
 type CodeWrapper string
 
 func (c *CodeWrapper) UnmarshalJSON(data []byte) error {
-	*c = CodeWrapper(string(data))
+	*c = CodeWrapper(data)
 	*c = CodeWrapper(strings.Trim(string(data), "\""))
 	return nil
 }
