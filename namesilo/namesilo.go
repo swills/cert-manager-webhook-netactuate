@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/er1c-zh/cert-manager-webhook-namesilo/utils"
+	"github.com/swills/cert-manager-webhook-namesilo/utils"
 )
 
 type Response struct {

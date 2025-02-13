@@ -16,8 +16,8 @@ import (
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
-	"github.com/er1c-zh/cert-manager-webhook-namesilo/namesilo"
-	"github.com/er1c-zh/cert-manager-webhook-namesilo/utils"
+	"github.com/swills/cert-manager-webhook-namesilo/namesilo"
+	"github.com/swills/cert-manager-webhook-namesilo/utils"
 )
 
 var GroupName = os.Getenv("GROUP_NAME")
