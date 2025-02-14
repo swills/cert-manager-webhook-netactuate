@@ -215,7 +215,7 @@ func (c *customDNSProviderSolver) loadAPIKey(cfg customDNSProviderConfig, ch *v1
 	}
 	keyBytes, ok := s.Data[cfg.APIKey.Key]
 	if !ok {
-		return "", fmt.Errorf("secret key %s not found in namespace %s, got: %#v", cfg.APIKey.Key, ch.ResourceNamespace, s)
+		return "", fmt.Errorf("secret key not found, namespace: %s name: %s, key: %s, got: %#v", ch.ResourceNamespace, cfg.APIKey.Name, cfg.APIKey.Key, s)
 	}
 	return string(keyBytes), nil
 }
