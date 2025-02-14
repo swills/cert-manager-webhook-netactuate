@@ -95,10 +95,11 @@ linters:
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-    - path: '_test.go'
-      linters:
-        - funlen
-        - gosec
+  exclude-rules:
+  - path: '_test.go'
+    linters:
+      - funlen
+      - gosec
 
 linters-settings:
   cyclop:
