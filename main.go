@@ -3,21 +3,19 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strings"
-
-	extapi "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/swills/cert-manager-webhook-namesilo/namesilo"
 	"github.com/swills/cert-manager-webhook-namesilo/utils"
+	extapi "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 var GroupName = os.Getenv("GROUP_NAME")
@@ -71,7 +69,7 @@ type customDNSProviderConfig struct {
 	// These fields will be set by users in the
 	// `issuer.spec.acme.dns01.providers.webhook.config` field.
 
-	//Email           string `json:"email"`
+	// Email           string `json:"email"`
 	// APIKeySecretRef v1alpha1.SecretKeySelector `json:"apiKeySecretRef"`
 
 	APIKey cmmetav1.SecretKeySelector `json:"apiKey"`
@@ -92,34 +90,48 @@ func (c *customDNSProviderSolver) Name() string {
 // This method should tolerate being called multiple times with the same value.
 // cert-manager itself will later perform a self check to ensure that the
 // solver has correctly configured the DNS provider.
-func (c *customDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) error {
-	cfg, err := loadConfig(ch.Config)
+func (c *customDNSProviderSolver) Present(challengeRequest *v1alpha1.ChallengeRequest) error {
+	var err error
+
+	var cfg customDNSProviderConfig
+
+	cfg, err = loadConfig(challengeRequest.Config)
 	if err != nil {
 		return err
 	}
 
-	apiKey, err := c.loadAPIKey(cfg, ch)
+	var apiKey string
+
+	apiKey, err = c.loadAPIKey(cfg, challengeRequest)
 	if err != nil {
 		return err
 	}
 
-	utils.Log("Presenting TXT record %s for %s, %s", ch.Key, ch.ResolvedFQDN, ch.ResolvedZone)
+	utils.Log("Presenting TXT record %s for %s, %s",
+		challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone)
 
 	// sets a record in the DNS provider's console
-	resp, err := namesilo.Call[namesilo.Response](apiKey, "dnsAddRecord", map[string]string{
-		"domain":  namesilo.GetDomainFromZone(ch.ResolvedZone),
+	var resp namesilo.Response
+
+	resp, err = namesilo.Call[namesilo.Response](apiKey, "dnsAddRecord", map[string]string{
+		"domain":  namesilo.GetDomainFromZone(challengeRequest.ResolvedZone),
 		"rrtype":  "TXT",
-		"rrhost":  strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone),
-		"rrvalue": ch.Key,
+		"rrhost":  strings.TrimSuffix(challengeRequest.ResolvedFQDN, "."+challengeRequest.ResolvedZone),
+		"rrvalue": challengeRequest.Key,
 	})
 	if err != nil {
 		return err
 	}
+
 	if resp.Reply.Code != "300" {
-		utils.Log("Error adding TXT record %s for %s, %s: %s", ch.Key, ch.ResolvedFQDN, ch.ResolvedZone, resp.Reply.Detail)
-		return errors.New(resp.Reply.Detail)
+		utils.Log("Error adding TXT record %s for %s, %s: %s",
+			challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, resp.Reply.Detail)
+
+		return fmt.Errorf("error adding TXT record: %s, %w", resp.Reply.Detail, ErrTXTRecordCreate)
 	}
-	utils.Log("Added TXT record %s for %s, %s", ch.Key, ch.ResolvedFQDN, ch.ResolvedZone)
+
+	utils.Log("Added TXT record %s for %s, %s",
+		challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone)
 
 	return nil
 }
@@ -130,54 +142,81 @@ func (c *customDNSProviderSolver) Present(ch *v1alpha1.ChallengeRequest) error {
 // value provided on the ChallengeRequest should be cleaned up.
 // This is in order to facilitate multiple DNS validations for the same domain
 // concurrently.
-func (c *customDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
+func (c *customDNSProviderSolver) CleanUp(challengeRequest *v1alpha1.ChallengeRequest) error {
+	var err error
+
+	var cfg customDNSProviderConfig
+
 	// add code that deletes a record from the DNS provider's console
-	cfg, err := loadConfig(ch.Config)
+	cfg, err = loadConfig(challengeRequest.Config)
 	if err != nil {
 		return err
 	}
-	apiKey, err := c.loadAPIKey(cfg, ch)
+
+	var apiKey string
+
+	apiKey, err = c.loadAPIKey(cfg, challengeRequest)
 	if err != nil {
 		return err
 	}
+
 	// 1. fetch the TXT record id
-	listResp, err := namesilo.Call[namesilo.DnsRecordListResponse](apiKey, "dnsListRecords", map[string]string{
-		"domain": namesilo.GetDomainFromZone(ch.ResolvedZone),
+	var listResp namesilo.DNSRecordListResponse
+
+	listResp, err = namesilo.Call[namesilo.DNSRecordListResponse](apiKey, "dnsListRecords", map[string]string{
+		"domain": namesilo.GetDomainFromZone(challengeRequest.ResolvedZone),
 	})
 	if err != nil {
-		utils.Log("Error listing TXT records for %s, %s: %s", ch.ResolvedFQDN, ch.ResolvedZone, err.Error())
+		utils.Log("Error listing TXT records for %s, %s: %s",
+			challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, err.Error())
+
 		return err
 	}
+
 	if listResp.Reply.Code != "300" {
-		return errors.New(listResp.Reply.Detail)
+		return fmt.Errorf("error fetching txt record: %s, %w", listResp.Reply.Detail, ErrTXTRecordFetch)
 	}
-	targetRecordID := ""
+
+	var targetRecordID string
+
 	for _, r := range listResp.Reply.ResourceRecord {
-		if r.Host == namesilo.GetDomainFromZone(ch.ResolvedFQDN) && r.Type == "TXT" && r.Value == ch.Key {
+		if r.Host == namesilo.GetDomainFromZone(challengeRequest.ResolvedFQDN) &&
+			r.Type == "TXT" && r.Value == challengeRequest.Key {
 			targetRecordID = r.ResourceID
+
 			break
 		}
 	}
+
 	if targetRecordID == "" {
-		utils.Log("No TXT record found for %s", ch.ResolvedFQDN)
+		utils.Log("No TXT record found for %s", challengeRequest.ResolvedFQDN)
+
 		for _, r := range listResp.Reply.ResourceRecord {
 			utils.Log("%s %s %s %s", r.ResourceID, r.Type, r.Host, r.Value)
 		}
-		return fmt.Errorf("no TXT record found for %s", ch.ResolvedFQDN)
+
+		return fmt.Errorf("no TXT record found for %s, %w", challengeRequest.ResolvedFQDN, ErrTXTRecordNotFound)
 	}
-	utils.Log("Found TXT record %s for %s, %s", targetRecordID, ch.ResolvedFQDN, ch.ResolvedZone)
+
+	utils.Log("Found TXT record %s for %s, %s",
+		targetRecordID, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone)
 
 	// 2. delete the TXT record
-	deleteResp, err := namesilo.Call[namesilo.Response](apiKey, "dnsDeleteRecord", map[string]string{
-		"domain": namesilo.GetDomainFromZone(ch.ResolvedZone),
+	var deleteResp namesilo.Response
+
+	deleteResp, err = namesilo.Call[namesilo.Response](apiKey, "dnsDeleteRecord", map[string]string{
+		"domain": namesilo.GetDomainFromZone(challengeRequest.ResolvedZone),
 		"rrid":   targetRecordID,
 	})
 	if err != nil {
 		return err
 	}
+
 	if deleteResp.Reply.Code != "300" {
-		utils.Log("Error deleting TXT record %s for %s, %s: %s", targetRecordID, ch.ResolvedFQDN, ch.ResolvedZone, deleteResp.Reply.Detail)
-		return errors.New(deleteResp.Reply.Detail)
+		utils.Log("Error deleting TXT record %s for %s, %s: %s",
+			targetRecordID, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, deleteResp.Reply.Detail)
+
+		return fmt.Errorf("error deleting TXT record: %s, %w", deleteResp.Reply.Detail, ErrTXTRecordDelete)
 	}
 
 	return nil
@@ -193,30 +232,32 @@ func (c *customDNSProviderSolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
 // The stopCh can be used to handle early termination of the webhook, in cases
 // where a SIGTERM or similar signal is sent to the webhook process.
 func (c *customDNSProviderSolver) Initialize(kubeClientConfig *rest.Config, _ <-chan struct{}) error {
-	///// UNCOMMENT THE BELOW CODE TO MAKE A KUBERNETES CLIENTSET AVAILABLE TO
-	///// YOUR CUSTOM DNS PROVIDER
-
 	cl, err := kubernetes.NewForConfig(kubeClientConfig)
 	if err != nil {
-		return err
+		return fmt.Errorf("error getting client config: %w", err)
 	}
 
 	c.client = cl
 
-	///// END OF CODE TO MAKE KUBERNETES CLIENTSET AVAILABLE
 	return nil
 }
 
 // loadAPIKey loads namesilo API key
-func (c *customDNSProviderSolver) loadAPIKey(cfg customDNSProviderConfig, ch *v1alpha1.ChallengeRequest) (string, error) {
-	s, err := c.client.CoreV1().Secrets(ch.ResourceNamespace).Get(context.Background(), cfg.APIKey.Name, metav1.GetOptions{})
+func (c *customDNSProviderSolver) loadAPIKey(cfg customDNSProviderConfig, challengeRequest *v1alpha1.ChallengeRequest) (string, error) { //nolint:lll
+	backGroundCtx := context.Background()
+
+	secret, err := c.client.CoreV1().Secrets(challengeRequest.ResourceNamespace).Get(
+		backGroundCtx, cfg.APIKey.Name, metav1.GetOptions{})
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error getting api key: %w", err)
 	}
-	keyBytes, ok := s.Data[cfg.APIKey.Key]
+
+	keyBytes, ok := secret.Data[cfg.APIKey.Key]
 	if !ok {
-		return "", fmt.Errorf("secret key not found, namespace: %s name: %s, key: %s, got: %#v", ch.ResourceNamespace, cfg.APIKey.Name, cfg.APIKey.Key, s)
+		return "", fmt.Errorf("secret key not found, namespace: %s name: %s, key: %s, got: %#v, %w",
+			challengeRequest.ResourceNamespace, cfg.APIKey.Name, cfg.APIKey.Key, secret, ErrAPIKeyDecode)
 	}
+
 	return string(keyBytes), nil
 }
 
@@ -228,8 +269,10 @@ func loadConfig(cfgJSON *extapi.JSON) (customDNSProviderConfig, error) {
 	if cfgJSON == nil {
 		return cfg, nil
 	}
-	if err := json.Unmarshal(cfgJSON.Raw, &cfg); err != nil {
-		return cfg, fmt.Errorf("error decoding solver config: %v", err)
+
+	err := json.Unmarshal(cfgJSON.Raw, &cfg)
+	if err != nil {
+		return cfg, fmt.Errorf("error decoding solver config: %w", err)
 	}
 
 	return cfg, nil
