@@ -24,7 +24,7 @@ metadata:
   name: namesilo-api-key
   namespace: cert-manager
 data:
-  key: eW91ci1hcGkta2V5
+  namesilo-api-key: eW91ci1hcGkta2V5
 ```
 
 Create your cluster issuer:

@@ -3,6 +3,7 @@ module github.com/swills/cert-manager-webhook-namesilo
 go 1.23.0
 
 require (
+	github.com/breml/rootcerts v0.2.20
 	github.com/cert-manager/cert-manager v1.17.1
 	k8s.io/apiextensions-apiserver v0.32.0
 	k8s.io/apimachinery v0.32.0
@@ -16,7 +17,6 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
-	github.com/breml/rootcerts v0.2.20 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/coreos/go-semver v0.3.1 // indirect
