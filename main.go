@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	_ "time/tzdata"
 
+	_ "github.com/breml/rootcerts"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
