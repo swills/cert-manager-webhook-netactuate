@@ -34,7 +34,7 @@ type DNSRecordListResponse struct {
 }
 
 // CodeWrapper holds the api response code string
-// FIXME: namesilo api's response code sometimes is string instead of int
+// FIXME: namesilo API response code sometimes is string instead of int
 type CodeWrapper string
 
 func (c *CodeWrapper) UnmarshalJSON(data []byte) error {
@@ -96,7 +96,7 @@ func Call[Resp any](apiKey string, operation string, params map[string]string) (
 	}
 
 	if err := json.Unmarshal(responseBody, &resp); err != nil {
-		utils.Log("namesilo unmarsha fail: %s, data: %s", err.Error(), string(responseBody))
+		utils.Log("namesilo unmarshal fail: %s, data: %s", err.Error(), string(responseBody))
 
 		return resp, fmt.Errorf("namesilo unmarshal json fail: %w", err)
 	}
