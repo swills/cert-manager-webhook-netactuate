@@ -192,13 +192,13 @@ func (c *customDNSProviderSolver) CleanUp(challengeRequest *v1alpha1.ChallengeRe
 		utils.Log("No TXT record found for %s", challengeRequest.ResolvedFQDN)
 
 		for _, r := range dnsRecordList {
-			utils.Log("%s %s %s %s", r.ID, r.RecordType, r.Name, r.Content)
+			utils.Log("%d %s %s %s", r.ID, r.RecordType, r.Name, r.Content)
 		}
 
 		return fmt.Errorf("no TXT record found for %s, %w", challengeRequest.ResolvedFQDN, ErrTXTRecordNotFound)
 	}
 
-	utils.Log("Found TXT record %s for %s, %s",
+	utils.Log("Found TXT record %d for %s, %s",
 		targetRecord.ID, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone)
 
 	// 2. delete the TXT record
