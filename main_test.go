@@ -21,7 +21,7 @@ func TestRunsSuite(t *testing.T) { //nolint:paralleltest,wsl
 	fixture := acmetest.NewFixture(&customDNSProviderSolver{},
 		acmetest.SetResolvedZone(zone),
 		acmetest.SetAllowAmbientCredentials(false),
-		acmetest.SetManifestPath("testdata/namesilo"),
+		acmetest.SetManifestPath("testdata/netactuate"),
 		acmetest.SetDNSServer("202.46.34.75:53"),
 		// acmetest.SetBinariesPath("_test/kubebuilder/bin"),
 	)

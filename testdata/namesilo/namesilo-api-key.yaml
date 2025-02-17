@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: namesilo-api-key
-data:
-  namesilo-api-key: replace-with-base64-namesilo-api-key

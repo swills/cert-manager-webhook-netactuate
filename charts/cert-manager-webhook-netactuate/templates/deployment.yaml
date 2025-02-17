@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "namesilo-webhook.fullname" . }}
+  name: {{ include "netactuate-webhook.fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app: {{ include "namesilo-webhook.name" . }}
-    chart: {{ include "namesilo-webhook.chart" . }}
+    app: {{ include "netactuate-webhook.name" . }}
+    chart: {{ include "netactuate-webhook.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ include "namesilo-webhook.name" . }}
+      app: {{ include "netactuate-webhook.name" . }}
       release: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: {{ include "namesilo-webhook.name" . }}
+        app: {{ include "netactuate-webhook.name" . }}
         release: {{ .Release.Name }}
     spec:
-      serviceAccountName: {{ include "namesilo-webhook.fullname" . }}
+      serviceAccountName: {{ include "netactuate-webhook.fullname" . }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -54,7 +54,7 @@ spec:
       volumes:
         - name: certs
           secret:
-            secretName: {{ include "namesilo-webhook.servingCertificate" . }}
+            secretName: {{ include "netactuate-webhook.servingCertificate" . }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
 {{ toYaml . | indent 8 }}

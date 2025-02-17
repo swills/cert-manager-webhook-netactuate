@@ -37,4 +37,4 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ env.GITHUB_REPOSITORY_OWNER_PART_SLUG }}/${{ env.GITHUB_REPOSITORY_NAME_PART_SLUG }}/cert-manager-webhook-namesilo:${{ env.GITHUB_REF_SLUG }}
+          tags: ghcr.io/${{ env.GITHUB_REPOSITORY_OWNER_PART_SLUG }}/${{ env.GITHUB_REPOSITORY_NAME_PART_SLUG }}/cert-manager-webhook-netactuate:${{ env.GITHUB_REF_SLUG }}

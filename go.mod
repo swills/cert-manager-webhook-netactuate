@@ -1,4 +1,4 @@
-module github.com/swills/cert-manager-webhook-namesilo
+module github.com/swills/cert-manager-webhook-netactuate
 
 go 1.23.0
 

@@ -12,8 +12,8 @@ import (
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
-	"github.com/swills/cert-manager-webhook-namesilo/namesilo"
-	"github.com/swills/cert-manager-webhook-namesilo/utils"
+	"github.com/swills/cert-manager-webhook-netactuate/netactuate"
+	"github.com/swills/cert-manager-webhook-netactuate/utils"
 	extapi "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -84,7 +84,7 @@ type customDNSProviderConfig struct {
 // within a single webhook deployment**.
 // For example, `cloudflare` may be used as the name of a solver.
 func (c *customDNSProviderSolver) Name() string {
-	return "namesilo"
+	return "netactuate"
 }
 
 // Present is responsible for actually presenting the DNS record with the
@@ -112,24 +112,21 @@ func (c *customDNSProviderSolver) Present(challengeRequest *v1alpha1.ChallengeRe
 	utils.Log("Presenting TXT record %s for %s, %s",
 		challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone)
 
-	// sets a record in the DNS provider's console
-	var resp namesilo.Response
+	err = netactuate.DNSRecordPost(
+		apiKey,
+		netactuate.GetDomainFromZone(challengeRequest.ResolvedZone),
+		"TXT",
+		strings.TrimSuffix(challengeRequest.ResolvedFQDN, "."+challengeRequest.ResolvedZone),
+		challengeRequest.Key,
+	)
 
-	resp, err = namesilo.Call[namesilo.Response](apiKey, "dnsAddRecord", map[string]string{
-		"domain":  namesilo.GetDomainFromZone(challengeRequest.ResolvedZone),
-		"rrtype":  "TXT",
-		"rrhost":  strings.TrimSuffix(challengeRequest.ResolvedFQDN, "."+challengeRequest.ResolvedZone),
-		"rrvalue": challengeRequest.Key,
-	})
 	if err != nil {
-		return err
-	}
-
-	if resp.Reply.Code != "300" {
 		utils.Log("Error adding TXT record %s for %s, %s: %s",
-			challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, resp.Reply.Detail)
+			challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, err.Error())
 
-		return fmt.Errorf("error adding TXT record: %s, %w", resp.Reply.Detail, ErrTXTRecordCreate)
+		return fmt.Errorf("error adding TXT record %s for %s, %s: %w",
+			challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, err,
+		)
 	}
 
 	utils.Log("Added TXT record %s for %s, %s",
@@ -163,62 +160,54 @@ func (c *customDNSProviderSolver) CleanUp(challengeRequest *v1alpha1.ChallengeRe
 	}
 
 	// 1. fetch the TXT record id
-	var listResp namesilo.DNSRecordListResponse
+	var dnsRecordList []netactuate.DNSRecord
 
-	listResp, err = namesilo.Call[namesilo.DNSRecordListResponse](apiKey, "dnsListRecords", map[string]string{
-		"domain": namesilo.GetDomainFromZone(challengeRequest.ResolvedZone),
-	})
+	dnsRecordList, err = netactuate.DNSRecordsGet(
+		apiKey,
+		netactuate.GetDomainFromZone(challengeRequest.ResolvedZone),
+	)
 	if err != nil {
-		utils.Log("Error listing TXT records for %s, %s: %s",
+		utils.Log("Error listing records for %s, %s: %s",
 			challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, err.Error())
 
-		return err
+		return fmt.Errorf(
+			"error listing record for %s, %s: %w",
+			challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, err,
+		)
 	}
 
-	if listResp.Reply.Code != "300" {
-		return fmt.Errorf("error fetching txt record: %s, %w", listResp.Reply.Detail, ErrTXTRecordFetch)
-	}
+	var targetRecord netactuate.DNSRecord
 
-	var targetRecordID string
-
-	for _, r := range listResp.Reply.ResourceRecord {
-		if r.Host == namesilo.GetDomainFromZone(challengeRequest.ResolvedFQDN) &&
-			r.Type == "TXT" && r.Value == challengeRequest.Key {
-			targetRecordID = r.ResourceID
+	for _, r := range dnsRecordList {
+		rfqdn := netactuate.GetDomainFromZone(challengeRequest.ResolvedFQDN)
+		if r.Name == rfqdn &&
+			r.RecordType == "TXT" && r.Content == challengeRequest.Key {
+			targetRecord = r
 
 			break
 		}
 	}
 
-	if targetRecordID == "" {
+	if targetRecord.ID == 0 {
 		utils.Log("No TXT record found for %s", challengeRequest.ResolvedFQDN)
 
-		for _, r := range listResp.Reply.ResourceRecord {
-			utils.Log("%s %s %s %s", r.ResourceID, r.Type, r.Host, r.Value)
+		for _, r := range dnsRecordList {
+			utils.Log("%s %s %s %s", r.ID, r.RecordType, r.Name, r.Content)
 		}
 
 		return fmt.Errorf("no TXT record found for %s, %w", challengeRequest.ResolvedFQDN, ErrTXTRecordNotFound)
 	}
 
 	utils.Log("Found TXT record %s for %s, %s",
-		targetRecordID, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone)
+		targetRecord.ID, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone)
 
 	// 2. delete the TXT record
-	var deleteResp namesilo.Response
-
-	deleteResp, err = namesilo.Call[namesilo.Response](apiKey, "dnsDeleteRecord", map[string]string{
-		"domain": namesilo.GetDomainFromZone(challengeRequest.ResolvedZone),
-		"rrid":   targetRecordID,
-	})
+	err = netactuate.DNSRecordDelete(apiKey, targetRecord.ID)
 	if err != nil {
-		return err
-	}
-
-	if deleteResp.Reply.Code != "300" {
 		utils.Log("Error deleting TXT record %s for %s, %s: %s",
-			targetRecordID, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, deleteResp.Reply.Detail)
+			targetRecord.ID, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, err.Error())
 
-		return fmt.Errorf("error deleting TXT record: %s, %w", deleteResp.Reply.Detail, ErrTXTRecordDelete)
+		return fmt.Errorf("error deleting TXT record: %w", err)
 	}
 
 	return nil
@@ -244,7 +233,7 @@ func (c *customDNSProviderSolver) Initialize(kubeClientConfig *rest.Config, _ <-
 	return nil
 }
 
-// loadAPIKey loads namesilo API key
+// loadAPIKey loads netactuate API key
 func (c *customDNSProviderSolver) loadAPIKey(cfg customDNSProviderConfig, challengeRequest *v1alpha1.ChallengeRequest) (string, error) { //nolint:lll
 	backGroundCtx := context.Background()
 

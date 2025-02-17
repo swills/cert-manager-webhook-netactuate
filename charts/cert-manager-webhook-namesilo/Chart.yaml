@@ -1,5 +1,0 @@
-apiVersion: v1
-appVersion: "v0.1.11"
-description: namesilo cert-manager-webhook
-name: namesilo-webhook
-version: "v0.1.11"

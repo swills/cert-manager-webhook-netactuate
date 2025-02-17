@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "namesilo-webhook.name" -}}
+{{- define "netactuate-webhook.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "namesilo-webhook.fullname" -}}
+{{- define "netactuate-webhook.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -27,22 +27,22 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "namesilo-webhook.chart" -}}
+{{- define "netactuate-webhook.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
-{{- define "namesilo-webhook.selfSignedIssuer" -}}
-{{ printf "%s-selfsign" (include "namesilo-webhook.fullname" .) }}
+{{- define "netactuate-webhook.selfSignedIssuer" -}}
+{{ printf "%s-selfsign" (include "netactuate-webhook.fullname" .) }}
 {{- end -}}
 
-{{- define "namesilo-webhook.rootCAIssuer" -}}
-{{ printf "%s-ca" (include "namesilo-webhook.fullname" .) }}
+{{- define "netactuate-webhook.rootCAIssuer" -}}
+{{ printf "%s-ca" (include "netactuate-webhook.fullname" .) }}
 {{- end -}}
 
-{{- define "namesilo-webhook.rootCACertificate" -}}
-{{ printf "%s-ca" (include "namesilo-webhook.fullname" .) }}
+{{- define "netactuate-webhook.rootCACertificate" -}}
+{{ printf "%s-ca" (include "netactuate-webhook.fullname" .) }}
 {{- end -}}
 
-{{- define "namesilo-webhook.servingCertificate" -}}
-{{ printf "%s-webhook-tls" (include "namesilo-webhook.fullname" .) }}
+{{- define "netactuate-webhook.servingCertificate" -}}
+{{ printf "%s-webhook-tls" (include "netactuate-webhook.fullname" .) }}
 {{- end -}}

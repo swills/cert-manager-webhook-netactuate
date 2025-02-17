@@ -2,18 +2,18 @@
   <img src="https://raw.githubusercontent.com/cert-manager/cert-manager/d53c0b9270f8cd90d908460d69502694e1838f5f/logo/logo-small.png" height="256" width="256" alt="cert-manager project logo" />
 </p>
 
-# ACME webhook for namesilo
+# ACME webhook for netactuate
 
-[![Release Image](https://github.com/swills/cert-manager-webhook-namesilo/actions/workflows/release-docker.yml/badge.svg)](https://github.com/swills/cert-manager-webhook-namesilo/actions/workflows/release-docker.yml)
+[![Release Image](https://github.com/swills/cert-manager-webhook-netactuate/actions/workflows/release-docker.yml/badge.svg)](https://github.com/swills/cert-manager-webhook-netactuate/actions/workflows/release-docker.yml)
 
-[![Release Charts](https://github.com/swills/cert-manager-webhook-namesilo/actions/workflows/release-charts.yml/badge.svg)](https://github.com/swills/cert-manager-webhook-namesilo/actions/workflows/release-charts.yml)
+[![Release Charts](https://github.com/swills/cert-manager-webhook-netactuate/actions/workflows/release-charts.yml/badge.svg)](https://github.com/swills/cert-manager-webhook-netactuate/actions/workflows/release-charts.yml)
 
 ## How to use the helm chart:
 
 Assuming you already have cert-manager deployed in the cert-manager namespace using helm:
 
 ```bash
-helm repo add swills-cert-manager-webhook-namesilo https://swills.github.io/cert-manager-webhook-namesilo/
+helm repo add swills-cert-manager-webhook-netactuate https://swills.github.io/cert-manager-webhook-netactuate/
 ```
 
 Create your api key secret:
@@ -21,10 +21,10 @@ Create your api key secret:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: namesilo-api-key
+  name: netactuate-api-key
   namespace: cert-manager
 data:
-  namesilo-api-key: eW91ci1hcGkta2V5
+  netactuate-api-key: cmVwbGFjZS13aXRoLW5ldGFjdHVhdGUtYXBpLWtleQ==
 ```
 
 Create your cluster issuer:
@@ -44,10 +44,10 @@ spec:
           webhook:
             config:
               apiKey:
-                name: namesilo-api-key
-                value: namesilo-api-key
+                name: netactuate-api-key
+                value: netactuate-api-key
             groupName: acme.example.com
-            solverName: namesilo
+            solverName: netactuate
         selector:
           dnsZones:
             - example.com
@@ -55,7 +55,7 @@ spec:
 
 Deploy the chart:
 ```bash
-helm install --namespace cert-manager namesilo-webhook swills-cert-manager-webhook-namesilo/namesilo-webhook
+helm install --namespace cert-manager netactuate-webhook swills-cert-manager-webhook-netactuate/netactuate-webhook
 ```
 
 ## How to test

@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "namesilo-webhook.fullname" . }}
+  name: {{ include "netactuate-webhook.fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app: {{ include "namesilo-webhook.name" . }}
-    chart: {{ include "namesilo-webhook.chart" . }}
+    app: {{ include "netactuate-webhook.name" . }}
+    chart: {{ include "netactuate-webhook.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 spec:
@@ -16,5 +16,5 @@ spec:
       protocol: TCP
       name: https
   selector:
-    app: {{ include "namesilo-webhook.name" . }}
+    app: {{ include "netactuate-webhook.name" . }}
     release: {{ .Release.Name }}
