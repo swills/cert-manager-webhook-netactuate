@@ -19,6 +19,9 @@ spec:
       labels:
         app: {{ include "netactuate-webhook.name" . }}
         release: {{ .Release.Name }}
+        {{- with .Values.podLabels }}
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       serviceAccountName: {{ include "netactuate-webhook.fullname" . }}
       containers:
@@ -49,8 +52,10 @@ spec:
             - name: certs
               mountPath: /tls
               readOnly: true
+{{- if .Values.resources }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
+{{- end }}
       volumes:
         - name: certs
           secret:
