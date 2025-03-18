@@ -16,6 +16,9 @@ Assuming you already have cert-manager deployed in the cert-manager namespace us
 helm repo add swills-cert-manager-webhook-netactuate https://swills.github.io/cert-manager-webhook-netactuate/
 ```
 
+Ensure your IP(s) are allowed in the IP ACLs, see [this note](https://status.netactuate.com/pages/maintenance/59cd452c6a99786b77cab2f7/67d1c5fe63ec070537f4b651)
+
+
 Create your api key secret:
 ```yaml
 apiVersion: v1
