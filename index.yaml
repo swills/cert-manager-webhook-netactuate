@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   netactuate-webhook:
   - apiVersion: v1
+    appVersion: v0.1.18
+    created: "2025-03-24T20:09:35.922588272Z"
+    description: netactuate cert-manager-webhook
+    digest: 8184871254d3046b2d77ae1b33aa9d4c3a3515173536084a3dab5652bc17518c
+    name: netactuate-webhook
+    urls:
+    - https://github.com/swills/cert-manager-webhook-netactuate/releases/download/netactuate-webhook-v0.1.18/netactuate-webhook-v0.1.18.tgz
+    version: v0.1.18
+  - apiVersion: v1
     appVersion: v0.1.17
     created: "2025-03-24T19:10:49.568587498Z"
     description: netactuate cert-manager-webhook
@@ -55,4 +64,4 @@ entries:
     urls:
     - https://github.com/swills/cert-manager-webhook-netactuate/releases/download/netactuate-webhook-v0.1.12/netactuate-webhook-v0.1.12.tgz
     version: v0.1.12
-generated: "2025-03-24T19:10:49.568674521Z"
+generated: "2025-03-24T20:09:35.92262028Z"
