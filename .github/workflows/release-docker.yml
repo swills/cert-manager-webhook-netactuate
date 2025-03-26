@@ -38,4 +38,4 @@ jobs:
         with:
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/${{ github.repository }}/cert-manager-webhook-namesilo:${{ github.ref_name }}
+          tags: ghcr.io/${{ github.repository }}/cert-manager-webhook-netactuate:${{ github.ref_name }}
