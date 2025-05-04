@@ -1,4 +1,4 @@
-<p align="center">
+<p>
   <img src="https://raw.githubusercontent.com/cert-manager/cert-manager/d53c0b9270f8cd90d908460d69502694e1838f5f/logo/logo-small.png" height="256" width="256" alt="cert-manager project logo" />
 </p>
 
@@ -63,6 +63,7 @@ helm install --namespace cert-manager netactuate-webhook swills-cert-manager-web
 
 ## How to test
 ```bash
-$ TEST_ZONE_NAME=example.com. make test
+$ env NETACTUATE_API_KEY='your-api-key' TEST_DOMAIN="example.coM." TEST_RECORD_ID=123456 go test -v ./...
 ```
 
+Note: You must change these example values to match your account API key, test domain and test record ID.

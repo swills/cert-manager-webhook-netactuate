@@ -23,7 +23,7 @@ func GetZoneID(domainName string, apiKey string) (int, error) {
 	}
 
 	for _, zone := range zoneList.Data {
-		if strings.EqualFold(zone.Name, domainName) {
+		if strings.EqualFold(zone.Name, strings.TrimRight(domainName, ".")) {
 			return zone.ID, nil
 		}
 	}

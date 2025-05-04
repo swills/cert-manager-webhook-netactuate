@@ -173,8 +173,19 @@ func TestDNSRecordDelete(t *testing.T) {
 	}
 
 	testDomain = os.Getenv("TEST_DOMAIN")
-	if testDomain == "" || testDomain == "example.com" {
+	if testDomain == "" || testDomain == "example.com." ||
+		testDomain == "example.com" || testDomain == "example.coM." {
 		t.Fatal("error getting domain")
+	}
+
+	testRecordID := os.Getenv("TEST_RECORD_ID")
+	if testRecordID == "" || testRecordID == "123456" {
+		t.Fatal("error getting test record ID")
+	}
+
+	testRecordIDInt64, err := strconv.ParseInt(testRecordID, 10, 64)
+	if err != nil {
+		t.Fatal("error getting test record ID")
 	}
 
 	type args struct {
@@ -191,7 +202,7 @@ func TestDNSRecordDelete(t *testing.T) {
 			name: "test1",
 			args: args{
 				apiKey:   netactuateAPIKey,
-				recordID: 3150133,
+				recordID: int(testRecordIDInt64),
 			},
 		},
 	}
