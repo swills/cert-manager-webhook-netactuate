@@ -94,7 +94,7 @@ func DNSRecordPost(apiKey string, domainName string, recordType string, recordNa
 	}
 
 	url := "https://vapi2.netactuate.com/api/dns/record?domain_id=" + strconv.FormatInt(int64(zoneID), 10) +
-		"&name=" + recordName + "&type=" + recordType + "&record_content=" + recordContent + "&key=" + apiKey
+		"&name=" + strings.TrimRight(recordName, ".") + "&type=" + recordType + "&record_content=" + recordContent + "&key=" + apiKey
 
 	backgroundContext := context.Background()
 
