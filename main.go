@@ -109,7 +109,7 @@ func (c *customDNSProviderSolver) Present(challengeRequest *v1alpha1.ChallengeRe
 		return err
 	}
 
-	slog.Info("Presenting TXT record",
+	slog.InfoContext(context.Background(), "Presenting TXT record",
 		"key", challengeRequest.Key,
 		"fqdn", challengeRequest.ResolvedFQDN,
 		"zone", challengeRequest.ResolvedZone,
@@ -124,7 +124,7 @@ func (c *customDNSProviderSolver) Present(challengeRequest *v1alpha1.ChallengeRe
 	)
 
 	if err != nil {
-		slog.Error("Error adding TXT record",
+		slog.ErrorContext(context.Background(), "Error adding TXT record",
 			"key", challengeRequest.Key,
 			"fqdn", challengeRequest.ResolvedFQDN,
 			"zone", challengeRequest.ResolvedZone,
@@ -135,7 +135,7 @@ func (c *customDNSProviderSolver) Present(challengeRequest *v1alpha1.ChallengeRe
 		)
 	}
 
-	slog.Info("Added TXT record",
+	slog.InfoContext(context.Background(), "Added TXT record",
 		"key", challengeRequest.Key,
 		"fqdn", challengeRequest.ResolvedFQDN,
 		"zone", challengeRequest.ResolvedZone,
@@ -209,7 +209,7 @@ func (c *customDNSProviderSolver) CleanUp(challengeRequest *v1alpha1.ChallengeRe
 		return fmt.Errorf("no TXT record found for %s, %w", challengeRequest.ResolvedFQDN, ErrTXTRecordNotFound)
 	}
 
-	slog.Info("Found TXT record",
+	slog.InfoContext(context.Background(), "Found TXT record",
 		"id", targetRecord.ID,
 		"fqdn", challengeRequest.ResolvedFQDN,
 		"zone", challengeRequest.ResolvedZone,
