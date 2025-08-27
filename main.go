@@ -176,7 +176,7 @@ func (c *customDNSProviderSolver) CleanUp(challengeRequest *v1alpha1.ChallengeRe
 		netactuate.GetDomainFromZone(challengeRequest.ResolvedZone),
 	)
 	if err != nil {
-		slog.Error("Error listing records",
+		slog.ErrorContext(context.Background(), "Error listing records",
 			"fqdn", challengeRequest.ResolvedFQDN,
 			"zone", challengeRequest.ResolvedZone,
 			"err", err,
@@ -201,7 +201,7 @@ func (c *customDNSProviderSolver) CleanUp(challengeRequest *v1alpha1.ChallengeRe
 	}
 
 	if targetRecord.ID == 0 {
-		slog.Error("No TXT record found",
+		slog.ErrorContext(context.Background(), "No TXT record found",
 			"fqdn", challengeRequest.ResolvedFQDN,
 			"records", dnsRecordList,
 		)
@@ -218,7 +218,7 @@ func (c *customDNSProviderSolver) CleanUp(challengeRequest *v1alpha1.ChallengeRe
 	// 2. delete the TXT record
 	err = netactuate.DNSRecordDelete(apiKey, targetRecord.ID)
 	if err != nil {
-		slog.Error("Error deleting TXT record",
+		slog.ErrorContext(context.Background(), "Error deleting TXT record",
 			"id", targetRecord.ID,
 			"fqdn", challengeRequest.ResolvedFQDN,
 			"zone", challengeRequest.ResolvedZone,
