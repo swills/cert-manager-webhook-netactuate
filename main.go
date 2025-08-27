@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 	_ "time/tzdata"
@@ -13,7 +14,6 @@ import (
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
 	cmmetav1 "github.com/cert-manager/cert-manager/pkg/apis/meta/v1"
 	"github.com/swills/cert-manager-webhook-netactuate/netactuate"
-	"github.com/swills/cert-manager-webhook-netactuate/utils"
 	extapi "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -109,8 +109,11 @@ func (c *customDNSProviderSolver) Present(challengeRequest *v1alpha1.ChallengeRe
 		return err
 	}
 
-	utils.Log("Presenting TXT record %s for %s, %s",
-		challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone)
+	slog.Info("Presenting TXT record",
+		"key", challengeRequest.Key,
+		"fqdn", challengeRequest.ResolvedFQDN,
+		"zone", challengeRequest.ResolvedZone,
+	)
 
 	err = netactuate.DNSRecordPost(
 		apiKey,
@@ -121,16 +124,22 @@ func (c *customDNSProviderSolver) Present(challengeRequest *v1alpha1.ChallengeRe
 	)
 
 	if err != nil {
-		utils.Log("Error adding TXT record %s for %s, %s: %s",
-			challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, err.Error())
+		slog.Error("Error adding TXT record",
+			"key", challengeRequest.Key,
+			"fqdn", challengeRequest.ResolvedFQDN,
+			"zone", challengeRequest.ResolvedZone,
+		)
 
 		return fmt.Errorf("error adding TXT record %s for %s, %s: %w",
 			challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, err,
 		)
 	}
 
-	utils.Log("Added TXT record %s for %s, %s",
-		challengeRequest.Key, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone)
+	slog.Info("Added TXT record",
+		"key", challengeRequest.Key,
+		"fqdn", challengeRequest.ResolvedFQDN,
+		"zone", challengeRequest.ResolvedZone,
+	)
 
 	return nil
 }
@@ -167,8 +176,11 @@ func (c *customDNSProviderSolver) CleanUp(challengeRequest *v1alpha1.ChallengeRe
 		netactuate.GetDomainFromZone(challengeRequest.ResolvedZone),
 	)
 	if err != nil {
-		utils.Log("Error listing records for %s, %s: %s",
-			challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, err.Error())
+		slog.Error("Error listing records",
+			"fqdn", challengeRequest.ResolvedFQDN,
+			"zone", challengeRequest.ResolvedZone,
+			"err", err,
+		)
 
 		return fmt.Errorf(
 			"error listing record for %s, %s: %w",
@@ -189,23 +201,29 @@ func (c *customDNSProviderSolver) CleanUp(challengeRequest *v1alpha1.ChallengeRe
 	}
 
 	if targetRecord.ID == 0 {
-		utils.Log("No TXT record found for %s", challengeRequest.ResolvedFQDN)
-
-		for _, r := range dnsRecordList {
-			utils.Log("%d %s %s %s", r.ID, r.RecordType, r.Name, r.Content)
-		}
+		slog.Error("No TXT record found",
+			"fqdn", challengeRequest.ResolvedFQDN,
+			"records", dnsRecordList,
+		)
 
 		return fmt.Errorf("no TXT record found for %s, %w", challengeRequest.ResolvedFQDN, ErrTXTRecordNotFound)
 	}
 
-	utils.Log("Found TXT record %d for %s, %s",
-		targetRecord.ID, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone)
+	slog.Info("Found TXT record",
+		"id", targetRecord.ID,
+		"fqdn", challengeRequest.ResolvedFQDN,
+		"zone", challengeRequest.ResolvedZone,
+	)
 
 	// 2. delete the TXT record
 	err = netactuate.DNSRecordDelete(apiKey, targetRecord.ID)
 	if err != nil {
-		utils.Log("Error deleting TXT record %s for %s, %s: %s",
-			targetRecord.ID, challengeRequest.ResolvedFQDN, challengeRequest.ResolvedZone, err.Error())
+		slog.Error("Error deleting TXT record",
+			"id", targetRecord.ID,
+			"fqdn", challengeRequest.ResolvedFQDN,
+			"zone", challengeRequest.ResolvedZone,
+			"err", err.Error(),
+		)
 
 		return fmt.Errorf("error deleting TXT record: %w", err)
 	}
