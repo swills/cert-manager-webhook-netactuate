@@ -17,7 +17,6 @@ func GetDomainFromZone(fqdn string) string {
 // GetZoneID returns the zone ID for a domain name, if it exists
 func GetZoneID(domainName string, apiKey string) (int, error) {
 	zoneList, err := DNSZoneGet(apiKey)
-
 	if err != nil {
 		return 0, fmt.Errorf("error getting zone: %w", err)
 	}

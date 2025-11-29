@@ -122,7 +122,6 @@ func (c *customDNSProviderSolver) Present(challengeRequest *v1alpha1.ChallengeRe
 		strings.TrimSuffix(challengeRequest.ResolvedFQDN, "."+challengeRequest.ResolvedZone),
 		challengeRequest.Key,
 	)
-
 	if err != nil {
 		slog.ErrorContext(context.Background(), "Error adding TXT record",
 			"key", challengeRequest.Key,
