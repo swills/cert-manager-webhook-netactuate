@@ -2,8 +2,9 @@ name: Build Image
 
 on:
   push:
-    tags:
-      - "*"
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"
 
 env:
   GOGC: 50
