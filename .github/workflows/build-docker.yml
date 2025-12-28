@@ -11,7 +11,14 @@ env:
 
 jobs:
   main:
-    runs-on: ubuntu-latest
+    runs-on: arc-runner-set-na
+
+    container:
+      image: ghcr.io/swills/kaniko/executor:112917512cd833128f93356fe39cb25aa814dc9a
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - uses: actions/checkout@v6
       - name: Setup Go
@@ -20,8 +27,7 @@ jobs:
           go-version-file: 'go.mod'
       - name: Build
         run: |
-          mkdir -p ${HOME}/.docker
-          cat <<EOF > ${HOME}/.docker/config.json
+          cat <<EOF > /kaniko/.docker/config.json
           {
             "auths": {
               "ghcr.io": {
