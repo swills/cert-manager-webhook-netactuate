@@ -20,6 +20,7 @@ jobs:
           go-version-file: 'go.mod'
       - name: Build
         run: |
+          mkdir -p /kaniko/.docker
           cat <<EOF > /kaniko/.docker/config.json
           {
             "auths": {
