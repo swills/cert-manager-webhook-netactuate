@@ -12,6 +12,8 @@ env:
 jobs:
   main:
     runs-on: arc-runner-set-na
+    container:
+      image: ghcr.io/actions/actions-runner:latest
     steps:
       - uses: actions/checkout@v6
       - name: Setup Go
