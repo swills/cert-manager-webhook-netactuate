@@ -10,24 +10,26 @@ env:
   GOGC: 50
 
 jobs:
-  main:
+  build:
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
     runs-on: arc-runner-set-na
     container:
-      image: ghcr.io/actions/actions-runner:latest
+      image: gcr.io/kaniko-project/executor:debug
     steps:
       - uses: actions/checkout@v6
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: kubernetes
-      - name: Build
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          load: true
-          provenance: false
+      - name: Build with Kaniko
+        run: |
+          /kaniko/executor \
+            --context="${GITHUB_WORKSPACE}" \
+            --dockerfile=Dockerfile \
+            --platform=${{ matrix.platform }} \
+            --no-push \
+            --tar-path=image-${{ matrix.platform }}.tar
