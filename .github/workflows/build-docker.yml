@@ -20,11 +20,8 @@ jobs:
           go-version-file: 'go.mod'
       - name: Build
         run: |
-          pwd
-          id
-          env | sort
-          mkdir -p /kaniko/.docker
-          cat <<EOF > /kaniko/.docker/config.json
+          mkdir -p ${HOME}/.docker
+          cat <<EOF > ${HOME}/.docker/config.json
           {
             "auths": {
               "ghcr.io": {
