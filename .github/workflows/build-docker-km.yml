@@ -12,6 +12,8 @@ env:
 jobs:
   main:
     runs-on: arc-runner-set-na
+    container:
+      image: ubuntu:latest
 
     steps:
       - uses: actions/checkout@v6
