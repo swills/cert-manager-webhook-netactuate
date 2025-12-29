@@ -10,39 +10,26 @@ env:
 
 jobs:
   main:
-    runs-on: arc-runner-set-na
-
-    container:
-      image: ghcr.io/swills/kaniko/executor:112917512cd833128f93356fe39cb25aa814dc9a
-    permissions:
-      contents: read
-      packages: write
-
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Log in to GitHub Docker Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          logout: true
       - name: Build and push
-        run: |
-          cat <<EOF > /kaniko/.docker/config.json
-          {
-            "auths": {
-              "ghcr.io": {
-                "auth": "$(echo -n "$GIT_USERNAME:$GIT_PASSWORD" | base64 -w0)"
-              }
-            }
-          }
-          EOF
-
-          /kaniko/executor --dockerfile="./Dockerfile" \
-            --context="${{ github.repositoryUrl }}#${{ github.ref }}#${{ github.sha }}"  \
-            --destination="$GH_REGISTRY/$IMAGE_NAME:$(echo ${GITHUB_SHA} | head  -c 7)" \
-            --cache=true --cache-copy-layers=true --cache-ttl=24h \
-            --push-retry 5
-        env:
-          GIT_USERNAME: ${{ github.actor }}
-          GIT_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-          GH_REGISTRY: "ghcr.io"
-          IMAGE_NAME: "${{ github.repository }}/cert-manager-webhook-netactuate"
+        id: docker_build
+        uses: docker/build-push-action@v6
+        with:
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/${{ github.repository }}/cert-manager-webhook-netactuate:${{ github.ref_name }}
