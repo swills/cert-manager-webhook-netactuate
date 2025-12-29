@@ -14,7 +14,7 @@ jobs:
     runs-on: arc-runner-set-na
 
     container:
-      image: ghcr.io/swills/kaniko/executor:112917512cd833128f93356fe39cb25aa814dc9a@sha256:84c0d661433bac9f27818e04fc3d68939a5dac5bc32eb3ce6ca1ed9334f49eba
+      image: ghcr.io/swills/kaniko/executor:v1.25.5.2
     permissions:
       contents: read
       packages: write
