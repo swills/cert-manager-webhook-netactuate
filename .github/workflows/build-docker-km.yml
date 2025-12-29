@@ -1,0 +1,21 @@
+name: Build Image KM
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0"
+
+env:
+  GOGC: 50
+
+jobs:
+  main:
+    runs-on: arc-runner-set-na
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
