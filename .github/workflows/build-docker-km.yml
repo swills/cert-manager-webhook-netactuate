@@ -23,11 +23,11 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
-      - name: install buildah
+      - name: Install buildah
         run: |
           . /etc/lsb-release && \
-          sudo apt-get update && \
-          sudo apt-get install -y buildah
+          apt-get update && \
+          apt-get install -y buildah
           buildah version
 
       - name: Build
