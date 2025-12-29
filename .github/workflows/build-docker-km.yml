@@ -15,7 +15,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
+
+      - name: Build
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: cert-manager-webhook-netactuate
+          tags: latest ${{ github.sha }}
+          containerfiles: |
+            ./Dockerfile
