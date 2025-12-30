@@ -8,6 +8,8 @@ on:
 
 env:
   GOGC: 50
+  _BUILDAH_STARTED_IN_USERNS: ""
+  BUILDAH_ISOLATION: chroot
 
 jobs:
   main:
@@ -29,7 +31,8 @@ jobs:
           apt-get update && \
           apt-get install -y buildah
           buildah version
-          echo 'unqualified-search-registries = ["docker.io"]' >> /usr/share/containers/containers.conf
+          cat /etc/containers/registries.conf
+          echo 'unqualified-search-registries = ["docker.io"]' >> /etc/containers/registries.conf
 
       - name: Build
         uses: redhat-actions/buildah-build@v2
