@@ -20,9 +20,10 @@ jobs:
         with:
           driver: remote
           endpoint: tcp://docker.mouf.io:2376
+          buildkitd-flags: --debug
 
       - name: Build
         id: docker_build
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
