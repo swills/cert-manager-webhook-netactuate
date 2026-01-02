@@ -29,17 +29,9 @@ jobs:
             cacert=/certs/docker00/ca-cert.pem
             cert=/certs/docker00/client-cert.pem
             key=/certs/docker00/client-key.pem
-          append: |
-            - name: docker01
-              platforms: linux/arm64
-              endpoint: tcp://docker1.mouf.io:2376
-              driver-opts:
-                - cacert=/certs/docker01/ca-cert.pem
-                - cert=/certs/docker01/client-cert.pem
-                - key=/certs/docker01/client-key.pem
 
       - name: Build
         id: docker_build
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
