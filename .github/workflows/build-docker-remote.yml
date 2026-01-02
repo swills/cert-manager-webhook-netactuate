@@ -15,18 +15,28 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Create Docker context
+      - name: Create Docker amd64 context
         run: |
           docker context create docker00 --docker \
+            "host=tcp://docker.mouf.io:2376,ca=/certs/docker00/ca-cert.pem,cert=/certs/docker00/client-cert.pem,key=/certs/docker00/client-key.pem"
+
+      - name: Create Docker arm64 context
+        run: |
+          docker context create docker01 --docker \
             "host=tcp://docker.mouf.io:2376,ca=/certs/docker00/ca-cert.pem,cert=/certs/docker00/client-cert.pem,key=/certs/docker00/client-key.pem"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
           endpoint: docker00
+          platforms: linux/amd64
+          append: |
+            - name: docker01
+              platforms: linux/arm64
+              endpoint: docker01
 
       - name: Build
         id: docker_build
         uses: docker/build-push-action@v6
         with:
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
