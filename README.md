@@ -9,7 +9,6 @@
 [![pages-build-deployment](https://github.com/swills/cert-manager-webhook-netactuate/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/swills/cert-manager-webhook-netactuate/actions/workflows/pages/pages-build-deployment)
 [![Release Containers](https://github.com/swills/cert-manager-webhook-netactuate/actions/workflows/release-containers.yml/badge.svg)](https://github.com/swills/cert-manager-webhook-netactuate/actions/workflows/release-containers.yml)
 [![Release Charts](https://github.com/swills/cert-manager-webhook-netactuate/actions/workflows/release-charts.yml/badge.svg)](https://github.com/swills/cert-manager-webhook-netactuate/actions/workflows/release-charts.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/swills/cert-manager-webhook-netactuate)](https://goreportcard.com/report/github.com/swills/cert-manager-webhook-netactuate)
 
 ## How to use the helm chart:
 
